@@ -1,97 +1,53 @@
-data = []
-current_position = ()
-current_direction = (-1, 0)
-
-with open("input.txt") as f:
-    for line in f:
-        if line == "\n":
-            continue
-        data.append(line.strip())
-
-for i in range(len(data)):
-    for j in range(len(data[i])):
-        if data[i][j] == "^":
-            current_position = (i, j)
+DIRECTIONS = [(-1, 0), (0, 1), (1, 0), (0, -1)]
 
 
-def simulate_path(data, current_position, current_direction):
-    count = 1
-    while True:
+def take_input():
+    grid = []
+    while line := input():
+        grid.append(line)
+    return grid
+
+
+def find_start(grid):
+    for i, row in enumerate(grid):
+        for j, c in enumerate(row):
+            if c == "^":
+                return i, j
+
+
+def walk(grid, start, extra=None):
+    rows, cols = len(grid), len(grid[0])
+    pos, d = start, 0
+    visited, seen = set(), set()
+    while 0 <= pos[0] < rows and 0 <= pos[1] < cols:
+        if (pos, d) in seen:
+            return visited, True
+        seen.add((pos, d))
+        visited.add(pos)
+        ni, nj = pos[0] + DIRECTIONS[d][0], pos[1] + DIRECTIONS[d][1]
         if (
-            current_position[0] < 0
-            or current_position[0] >= len(data)
-            or current_position[1] < 0
-            or current_position[1] >= len(data[0])
+            0 <= ni < rows
+            and 0 <= nj < cols
+            and (grid[ni][nj] == "#" or (ni, nj) == extra)
         ):
-            break
-
-        if data[current_position[0]][current_position[1]] == "#":
-            current_position = (
-                current_position[0] - current_direction[0],
-                current_position[1] - current_direction[1],
-            )
-            current_direction = (current_direction[1], -current_direction[0])
-
-        if data[current_position[0]][current_position[1]] == ".":
-            data[current_position[0]] = (
-                data[current_position[0]][: current_position[1]]
-                + ","
-                + data[current_position[0]][current_position[1] + 1 :]
-            )
-            count += 1
-
-        current_position = (
-            current_position[0] + current_direction[0],
-            current_position[1] + current_direction[1],
-        )
-
-    print(count)
+            d = (d + 1) % 4
+        else:
+            pos = (ni, nj)
+    return visited, False
 
 
-# simulate_path(data, current_position, current_direction)
+def part1(grid):
+    visited, _ = walk(grid, find_start(grid))
+    return len(visited)
 
 
-def simulate_guard_loop(data, current_position, current_direction):
-    visited_states = set()
-    while True:
-        if (
-            current_position[0] < 0
-            or current_position[0] >= len(data)
-            or current_position[1] < 0
-            or current_position[1] >= len(data[0])
-        ):
-            return False
-
-        if (current_position, current_direction) in visited_states:
-            return True
-
-        visited_states.add((current_position, current_direction))
-
-        if data[current_position[0]][current_position[1]] == "#":
-            current_position = (
-                current_position[0] - current_direction[0],
-                current_position[1] - current_direction[1],
-            )
-            current_direction = (current_direction[1], -current_direction[0])
-
-        current_position = (
-            current_position[0] + current_direction[0],
-            current_position[1] + current_direction[1],
-        )
+def part2(grid):
+    start = find_start(grid)
+    visited, _ = walk(grid, start)
+    visited.discard(start)
+    return sum(walk(grid, start, extra=cell)[1] for cell in visited)
 
 
-count = 0
-for i in range(len(data)):
-    for j in range(len(data[i])):
-        if data[i][j] == "^":
-            continue
-        if data[i][j] == "#":
-            continue
-        if data[i][j] == ".":
-            data[i] = data[i][:j] + "#" + data[i][j + 1 :]
-            is_loop = simulate_guard_loop(data, current_position, current_direction)
-            if is_loop:
-                count += 1
-            data[i] = data[i][:j] + "." + data[i][j + 1 :]
-
-print(count)
+grid = take_input()
+print(part1(grid))
+print(part2(grid))
