@@ -1,48 +1,47 @@
-current_position = []
-velocity = []
+import re
+from math import prod
 
-with open("input.txt") as f:
-    for line in f:
-        line = line.strip()
-        parts = line.split()
-        p = list(map(int, parts[0][2:].split(",")))
-        v = list(map(int, parts[1][2:].split(",")))
-        current_position.append(p)
-        velocity.append(v)
+W, H = 101, 103
 
 
-count = 1
-while count < 10000:  # experiment with the number of iterations
-    tmp = [["0" for i in range(101)] for j in range(103)]
-    for j in range(len(current_position)):
-        current_position[j] = [
-            (current_position[j][0] + velocity[j][0]) % 101,
-            (current_position[j][1] + velocity[j][1]) % 103,
-        ]
-
-    for j in range(len(current_position)):
-        tmp[current_position[j][1]][current_position[j][0]] = "1"
-
-    for j in range(len(tmp)):
-        if "111111" in "".join(tmp[j]):  # experiment with the numbers of 1s in a row.
-            print(count)  # answer is the one that has the most number of occurences
-
-    count += 1
+def take_input():
+    robots = []
+    while line := input():
+        px, py, vx, vy = (int(x) for x in re.findall(r"-?\d+", line))
+        robots.append(((px, py), (vx, vy)))
+    return robots
 
 
-quad_1 = 0
-quad_2 = 0
-quad_3 = 0
-quad_4 = 0
-for i in range(len(current_position)):
+def part1(robots):
+    mx, my = W // 2, H // 2
+    quads = [0, 0, 0, 0]
+    for (px, py), (vx, vy) in robots:
+        x = (px + vx * 100) % W
+        y = (py + vy * 100) % H
+        if x == mx or y == my:
+            continue
+        quads[(x < mx) * 2 + (y < my)] += 1
+    return prod(quads)
 
-    if current_position[i][0] < 50 and current_position[i][1] < 51:
-        quad_1 += 1
-    if current_position[i][0] > 50 and current_position[i][1] < 51:
-        quad_2 += 1
-    if current_position[i][0] < 50 and current_position[i][1] > 51:
-        quad_3 += 1
-    if current_position[i][0] > 50 and current_position[i][1] > 51:
-        quad_4 += 1
 
-print(quad_1 * quad_2 * quad_3 * quad_4)
+def variance(values):
+    mean = sum(values) / len(values)
+    return sum((v - mean) ** 2 for v in values)
+
+
+def part2(robots):
+    best_tx = min(
+        range(W),
+        key=lambda t: variance([(px + vx * t) % W for (px, _), (vx, _) in robots]),
+    )
+    best_ty = min(
+        range(H),
+        key=lambda t: variance([(py + vy * t) % H for (_, py), (_, vy) in robots]),
+    )
+    k = ((best_ty - best_tx) * pow(W, -1, H)) % H
+    return best_tx + W * k
+
+
+robots = take_input()
+print(part1(robots))
+print(part2(robots))
