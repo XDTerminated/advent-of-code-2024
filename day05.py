@@ -1,12 +1,21 @@
-import sys
 from functools import cmp_to_key
 from itertools import combinations
 
 
 def take_input():
-    rules_block, updates_block = sys.stdin.read().split("\n\n", 1)
-    rules = {tuple(map(int, line.split("|"))) for line in rules_block.splitlines()}
-    updates = [list(map(int, line.split(","))) for line in updates_block.splitlines()]
+    rules, updates, section = set(), [], 0
+    while True:
+        line = input()
+        if not line:
+            if section == 0:
+                section = 1
+                continue
+            break
+        if section == 0:
+            a, b = map(int, line.split("|"))
+            rules.add((a, b))
+        else:
+            updates.append([int(x) for x in line.split(",")])
     return rules, updates
 
 
