@@ -1,75 +1,41 @@
-with open("input.txt") as f:
-    data = f.readlines()
-
-data = [x.strip() for x in data]
+DIRECTIONS = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
 
-def get_xmas(data):
+def take_input():
+    grid = []
+    while line := input():
+        grid.append(line)
+    return grid
 
-    rows, cols = len(data), len(data[0])
-    count = 0
 
-    def check_direction(x, y, dx, dy):
-        if not (0 <= x + 3 * dx < rows and 0 <= y + 3 * dy < cols):
+def part1(grid):
+    rows, cols = len(grid), len(grid[0])
+
+    def is_xmas(i, j, dx, dy):
+        if not (0 <= i + 3 * dx < rows and 0 <= j + 3 * dy < cols):
             return False
-        return "".join(data[x + i * dx][y + i * dy] for i in range(4)) == "XMAS"
+        return "".join(grid[i + k * dx][j + k * dy] for k in range(4)) == "XMAS"
 
-    directions_to_check = [
-        (0, 1),
-        (1, 1),
-        (1, 0),
-        (1, -1),
-        (0, -1),
-        (-1, -1),
-        (-1, 0),
-        (-1, 1),
-    ]
-
-    for i in range(rows):
-        for j in range(cols):
-            if data[i][j] == "X":
-                for dx, dy in directions_to_check:
-                    if check_direction(i, j, dx, dy):
-                        count += 1
-
-    return count
+    return sum(
+        is_xmas(i, j, dx, dy)
+        for i in range(rows)
+        for j in range(cols)
+        for dx, dy in DIRECTIONS
+    )
 
 
-print(get_xmas(data))
+def part2(grid):
+    rows, cols = len(grid), len(grid[0])
+    valid = {"MAS", "SAM"}
+    return sum(
+        grid[i][j] == "A"
+        and grid[i - 1][j - 1] + "A" + grid[i + 1][j + 1] in valid
+        and grid[i - 1][j + 1] + "A" + grid[i + 1][j - 1] in valid
+        for i in range(1, rows - 1)
+        for j in range(1, cols - 1)
+    )
 
 
-def get_x_mas(data):
-    rows, cols = len(data), len(data[0])
-    count = 0
-
-    valid_mas = ["MAS", "SAM"]
-
-    def get_diagonal(x, y, dx, dy):
-        if not (
-            0 <= x - dx < rows
-            and 0 <= x + dx < rows
-            and 0 <= y - dy < cols
-            and 0 <= y + dy < cols
-        ):
-            return None
-
-        return data[x - dx][y - dy] + data[x][y] + data[x + dx][y + dy]
-
-    for i in range(rows):
-        for j in range(cols):
-            if data[i][j] != "A":
-                continue
-
-            diag1 = get_diagonal(i, j, 1, 1)
-            diag2 = get_diagonal(i, j, 1, -1)
-
-            if not diag1 and not diag2:
-                continue
-
-            if diag1 in valid_mas and diag2 in valid_mas:
-                count += 1
-
-    return count
-
-
-print(get_x_mas(data))
+grid = take_input()
+print(part1(grid))
+print(part2(grid))
