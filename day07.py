@@ -1,58 +1,39 @@
-test_value = []
-numbers = []
-total = 0
-
-with open("input.txt") as f:
-    for line in f:
-        line = line.strip().split(":")
-        test_value.append(int(line[0]))
-        numbers.append(list(map(int, line[1].split())))
+def take_input():
+    equations = []
+    while line := input():
+        target, rest = line.split(":")
+        equations.append((int(target), [int(x) for x in rest.split()]))
+    return equations
 
 
-def helper(test_value, numbers):
-    for i in range(2 ** (len(numbers) - 1)):
-        operations = bin(i)[2:].zfill(len(numbers) - 1)
-        total = numbers[0]
-        for j in range(len(operations)):
-            if operations[j] == "0":
-                total += numbers[j + 1]
-            elif operations[j] == "1":
-                total *= numbers[j + 1]
-        if total == test_value:
+def can_make(target, numbers, ops):
+    *rest, last = numbers
+    if not rest:
+        return target == last
+    for op in ops:
+        if op == "+" and target > last and can_make(target - last, rest, ops):
             return True
-
+        if op == "*" and target % last == 0 and can_make(target // last, rest, ops):
+            return True
+        if op == "||":
+            t, s = str(target), str(last)
+            if len(t) > len(s) and t.endswith(s) and can_make(int(t[: -len(s)]), rest, ops):
+                return True
     return False
 
 
-def ter(num):
-    if num == 0:
-        return "0"
-    res = ""
-    while num:
-        res += str(num % 3)
-        num //= 3
-    return res[::-1]
+def solve(equations, ops):
+    return sum(t for t, nums in equations if can_make(t, nums, ops))
 
 
-def helper2(test_value, numbers):
-    for i in range(3 ** (len(numbers) - 1)):
-        operations = ter(i).zfill(len(numbers) - 1)
-        total = numbers[0]
-        for j in range(len(operations)):
-            if operations[j] == "0":
-                total += numbers[j + 1]
-            elif operations[j] == "1":
-                total *= numbers[j + 1]
-            else:
-                total = int(str(total) + str(numbers[j + 1]))
-        if total == test_value:
-            return True
-
-    return False
+def part1(equations):
+    return solve(equations, ("+", "*"))
 
 
-for i in range(len(test_value)):
-    if helper2(test_value[i], numbers[i]):
-        total += test_value[i]
+def part2(equations):
+    return solve(equations, ("+", "*", "||"))
 
-print(total)
+
+equations = take_input()
+print(part1(equations))
+print(part2(equations))
