@@ -1,44 +1,36 @@
-data = []
-with open("input.txt") as f:
-    for line in f:
-        data.append(list(str(line.strip())))
+DIRECTIONS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
 
-def get_trailhead_score(data, pos_x, pos_y, visited):
-    if data[pos_x][pos_y] == "9":
-        visited.append((pos_x, pos_y))
-        return visited
-
-    if pos_x - 1 >= 0:
-        if data[pos_x - 1][pos_y] == str(int(data[pos_x][pos_y]) + 1):
-            visited = get_trailhead_score(data, pos_x - 1, pos_y, visited)
-
-    if pos_x + 1 < len(data):
-        if data[pos_x + 1][pos_y] == str(int(data[pos_x][pos_y]) + 1):
-            visited = get_trailhead_score(data, pos_x + 1, pos_y, visited)
-
-    if pos_y - 1 >= 0:
-        if data[pos_x][pos_y - 1] == str(int(data[pos_x][pos_y]) + 1):
-            visited = get_trailhead_score(data, pos_x, pos_y - 1, visited)
-
-    if pos_y + 1 < len(data[pos_x]):
-        if data[pos_x][pos_y + 1] == str(int(data[pos_x][pos_y]) + 1):
-            visited = get_trailhead_score(data, pos_x, pos_y + 1, visited)
-    return visited
+def take_input():
+    grid = []
+    while line := input():
+        grid.append([int(c) for c in line])
+    return grid
 
 
-trailhead_score = 0
-for i in range(len(data)):
-    for j in range(len(data[i])):
-        if data[i][j] == "0":
-            trailhead_score += len(set(get_trailhead_score(data, i, j, [])))
+def trails_from(grid, i, j):
+    if grid[i][j] == 9:
+        yield (i, j)
+        return
+    rows, cols = len(grid), len(grid[0])
+    for di, dj in DIRECTIONS:
+        ni, nj = i + di, j + dj
+        if 0 <= ni < rows and 0 <= nj < cols and grid[ni][nj] == grid[i][j] + 1:
+            yield from trails_from(grid, ni, nj)
 
-print(trailhead_score)
 
-rating = 0
-for i in range(len(data)):
-    for j in range(len(data[i])):
-        if data[i][j] == "0":
-            rating += len(get_trailhead_score(data, i, j, []))
+def trailheads(grid):
+    return [(i, j) for i, row in enumerate(grid) for j, v in enumerate(row) if v == 0]
 
-print(rating)
+
+def part1(grid):
+    return sum(len(set(trails_from(grid, i, j))) for i, j in trailheads(grid))
+
+
+def part2(grid):
+    return sum(len(list(trails_from(grid, i, j))) for i, j in trailheads(grid))
+
+
+grid = take_input()
+print(part1(grid))
+print(part2(grid))
