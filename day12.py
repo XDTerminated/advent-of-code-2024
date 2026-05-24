@@ -1,107 +1,69 @@
-data = list(map(str.strip, open("input.txt").readlines()))
-hm_pos = {}
-
-for i in range(len(data)):
-    for j in range(len(data[0])):
-        if data[i][j] not in hm_pos:
-            hm_pos[data[i][j]] = [(i, j)]
-        else:
-            hm_pos[data[i][j]].append((i, j))
+DIRECTIONS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
 
-def get_all_one_away(coords, pos):
-    a = [pos]
-    for i in coords:
-        if abs(i[0] - pos[0]) + abs(i[1] - pos[1]) == 1:
-            a.append(i)
-
-    return a
+def take_input():
+    grid = []
+    while line := input():
+        grid.append(line)
+    return grid
 
 
-def get_regions(coords):
-    regions = []
-    for i in coords:
-        regions.append(get_all_one_away(coords, i))
-
-    idx = 0
-    while idx < len(regions):
-        merged = False
-        for i in range(idx + 1, len(regions)):
-            if len(set(regions[idx]) & set(regions[i])) > 0:
-                regions[idx] = list(set(regions[idx]) | set(regions[i]))
-                regions[i] = []
-                merged = True
-
-        if not merged:
-            idx += 1
-
-    regions = [i for i in regions if len(i) > 0]
-    return regions
-
-
-cost = 0
-for i in hm_pos.keys():
-    regions = get_regions(hm_pos[i])
-    for j in range(len(regions)):
-        perimeter = 0
-        for k in regions[j]:
-            rows, cols = len(data), len(data[0])
-            current_value = data[k[0]][k[1]]
-            directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-
-            for dx, dy in directions:
-                nx, ny = k[0] + dx, k[1] + dy
-
-                if nx < 0 or nx >= rows or ny < 0 or ny >= cols:
-                    perimeter += 1
-
-                elif data[nx][ny] != current_value:
-                    perimeter += 1
-
-        cost += len(regions[j]) * perimeter
-
-print(cost)
+def regions(grid):
+    rows, cols = len(grid), len(grid[0])
+    visited = set()
+    for i in range(rows):
+        for j in range(cols):
+            if (i, j) in visited:
+                continue
+            label = grid[i][j]
+            region = set()
+            stack = [(i, j)]
+            while stack:
+                p = stack.pop()
+                if p in region:
+                    continue
+                region.add(p)
+                visited.add(p)
+                for di, dj in DIRECTIONS:
+                    ni, nj = p[0] + di, p[1] + dj
+                    if (
+                        0 <= ni < rows
+                        and 0 <= nj < cols
+                        and grid[ni][nj] == label
+                        and (ni, nj) not in region
+                    ):
+                        stack.append((ni, nj))
+            yield region
 
 
-cost = 0
-for letter in hm_pos.keys():
-    regions = get_regions(hm_pos[letter])
-    for region in regions:
-        region_set = set(region)
-        corners = 0
-        for r, c in region_set:
-            in_region = lambda pt: pt in region_set
-            if not in_region((r - 1, c)) and not in_region((r, c - 1)):
-                corners += 1
-            if (
-                in_region((r - 1, c))
-                and in_region((r, c - 1))
-                and not in_region((r - 1, c - 1))
-            ):
-                corners += 1
-            if not in_region((r - 1, c)) and not in_region((r, c + 1)):
-                corners += 1
-            if (
-                in_region((r - 1, c))
-                and in_region((r, c + 1))
-                and not in_region((r - 1, c + 1))
-            ):
-                corners += 1
-            if not in_region((r + 1, c)) and not in_region((r, c - 1)):
-                corners += 1
-            if (
-                in_region((r + 1, c))
-                and in_region((r, c - 1))
-                and not in_region((r + 1, c - 1))
-            ):
-                corners += 1
-            if not in_region((r + 1, c)) and not in_region((r, c + 1)):
-                corners += 1
-            if (
-                in_region((r + 1, c))
-                and in_region((r, c + 1))
-                and not in_region((r + 1, c + 1))
-            ):
-                corners += 1
-        cost += len(region_set) * corners
-print(cost)
+def perimeter(region):
+    return sum(
+        (r + di, c + dj) not in region for r, c in region for di, dj in DIRECTIONS
+    )
+
+
+def sides(region):
+    total = 0
+    for r, c in region:
+        for dr, dc in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+            v = (r + dr, c) in region
+            h = (r, c + dc) in region
+            d = (r + dr, c + dc) in region
+            if not v and not h:
+                total += 1
+            elif v and h and not d:
+                total += 1
+    return total
+
+
+def part1(grid):
+    return sum(len(r) * perimeter(r) for r in regions(grid))
+
+
+def part2(grid):
+    return sum(len(r) * sides(r) for r in regions(grid))
+
+
+grid = take_input()
+print(part1(grid))
+print(part2(grid))
