@@ -1,45 +1,41 @@
-data = map(int, input().split())
-turn = 0
-hm = {}
+from collections import Counter
 
-for num in data:
-    if num not in hm:
-        hm[num] = 1
-    else:
-        hm[num] += 1
 
-while turn < 75:
-    tmp_dict = {}
-    for i in list(hm.keys()):
-        if hm[i] > 0:
-            if i == 0:
-                if 1 not in tmp_dict:
-                    tmp_dict[1] = hm[i]
-                else:
-                    tmp_dict[1] += hm[i]
-            elif len(str(i)) % 2 == 0:
-                left = int(str(i)[: len(str(i)) // 2])
-                right = int(str(i)[len(str(i)) // 2 :])
+def take_input():
+    return [int(x) for x in input().split()]
 
-                if left not in tmp_dict:
-                    tmp_dict[left] = hm[i]
-                else:
-                    tmp_dict[left] += hm[i]
 
-                if right not in tmp_dict:
-                    tmp_dict[right] = hm[i]
-                else:
-                    tmp_dict[right] += hm[i]
+def blink(stones):
+    next_stones = Counter()
+    for stone, count in stones.items():
+        if stone == 0:
+            next_stones[1] += count
+        else:
+            s = str(stone)
+            if len(s) % 2 == 0:
+                half = len(s) // 2
+                next_stones[int(s[:half])] += count
+                next_stones[int(s[half:])] += count
             else:
-                if i * 2024 not in tmp_dict:
-                    tmp_dict[i * 2024] = hm[i]
-                else:
-                    tmp_dict[i * 2024] += hm[i]
-        hm[i] = 0
+                next_stones[stone * 2024] += count
+    return next_stones
 
-    for i in tmp_dict.keys():
-        hm[i] = tmp_dict[i]
 
-    turn += 1
+def count_after(stones, n):
+    stones = Counter(stones)
+    for _ in range(n):
+        stones = blink(stones)
+    return sum(stones.values())
 
-print(sum(hm.values()))
+
+def part1(stones):
+    return count_after(stones, 25)
+
+
+def part2(stones):
+    return count_after(stones, 75)
+
+
+stones = take_input()
+print(part1(stones))
+print(part2(stones))
