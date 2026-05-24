@@ -1,84 +1,59 @@
-data = ""
-with open("input.txt", "r") as file:
-    data = file.read().strip()
+def take_input():
+    return input()
 
 
-disk = []
-id = 0
-for i in range(len(data)):
-    if i % 2 == 0:
-        tmp = [id] * int(data[i])
-        disk.append(tmp)
-        id += 1
-    else:
-        tmp = ["."] * int(data[i])
-        disk.append(tmp)
+def expand(disk_map):
+    disk = []
+    for i, n in enumerate(disk_map):
+        disk.extend([i // 2 if i % 2 == 0 else None] * int(n))
+    return disk
 
 
-disk = [j for i in disk for j in i]
-ptr_start = 0
-ptr_end = len(disk) - 1
+def checksum(disk):
+    return sum(i * x for i, x in enumerate(disk) if x is not None)
 
-while ptr_start < ptr_end:
-    if disk[ptr_start] == ".":
-        if disk[ptr_end] == ".":
-            ptr_end -= 1
+
+def part1(disk_map):
+    disk = expand(disk_map)
+    left, right = 0, len(disk) - 1
+    while left < right:
+        if disk[left] is not None:
+            left += 1
+        elif disk[right] is None:
+            right -= 1
         else:
-            disk[ptr_start] = disk[ptr_end]
-            disk[ptr_end] = "."
-    else:
-        ptr_start += 1
+            disk[left], disk[right] = disk[right], disk[left]
+            left += 1
+            right -= 1
+    return checksum(disk)
 
-checksum = 0
-for i in range(len(disk)):
-    if disk[i] == ".":
-        break
-    checksum += disk[i] * i
 
-print(checksum)
+def part2(disk_map):
+    segments = [
+        [i // 2 if i % 2 == 0 else None, int(n)] for i, n in enumerate(disk_map)
+    ]
+    file_ids = sorted({s[0] for s in segments if s[0] is not None}, reverse=True)
 
-disk = []
-id = 0
-for i in range(len(data)):
-    if i % 2 == 0:
-        tmp = [id] * int(data[i])
-        disk.append(tmp)
-        id += 1
-    else:
-        tmp = ["."] * int(data[i])
-        disk.append(tmp)
+    for fid in file_ids:
+        fpos = next(i for i, s in enumerate(segments) if s[0] == fid)
+        flen = segments[fpos][1]
+        for gpos in range(fpos):
+            if segments[gpos][0] is None and segments[gpos][1] >= flen:
+                gap_len = segments[gpos][1]
+                segments[fpos] = [None, flen]
+                segments[gpos] = [fid, flen]
+                if gap_len > flen:
+                    segments.insert(gpos + 1, [None, gap_len - flen])
+                break
 
-l_files = []
-for i in range(len(disk)):
-    if "." in disk[i] or len(disk[i]) == 0:
-        continue
-    l_files.append(disk[i])
+    pos, total = 0, 0
+    for seg_id, length in segments:
+        if seg_id is not None:
+            total += seg_id * sum(range(pos, pos + length))
+        pos += length
+    return total
 
-l_files = l_files[::-1]
 
-for i in range(len(l_files)):
-    length = len(l_files[i])
-    cur_index = disk.index(l_files[i])
-    for j in range(0, cur_index):
-        if disk[j] and disk[j][0] == "." and len(disk[j]) >= length:
-            leftover = disk[j][length:]
-            disk = (
-                disk[:j]
-                + [l_files[i]]
-                + ([leftover] if leftover else [])
-                + disk[j + 1 :]
-            )
-            for k in range(len(disk) - 1, j, -1):
-                if disk[k] == l_files[i]:
-                    disk[k] = ["." for _ in range(length)]
-                    break
-            break
-
-flatten = [j for i in disk for j in i]
-checksum = 0
-for i in range(len(flatten)):
-    if flatten[i] == ".":
-        continue
-    checksum += flatten[i] * i
-
-print(checksum)
+disk_map = take_input()
+print(part1(disk_map))
+print(part2(disk_map))
